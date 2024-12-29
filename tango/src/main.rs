@@ -1,5 +1,8 @@
 use macroquad::prelude as mq;
+use permute::SolvedSquare;
 use std::collections::HashMap;
+
+mod permute;
 
 
 
@@ -52,9 +55,156 @@ fn index_to_xy(index: usize, width: u32) -> (u32, u32) {
 }
 
 
+fn solve(
+    squares: &[Square],
+    edges: &HashMap<(usize, usize), Edge>,
+    squares_count: u32,
+) -> bool {
+    let total = squares_count * squares_count;
+    let permutations = permute::BalancedPermutations::new(total as usize);
+
+    let mut i = 0;
+
+    for permutation in permutations {
+        if is_valid_permutation(&permutation, squares, edges, squares_count) {
+            return true;
+        }
+        i += 1;
+
+        if i % 1000 == 0 {
+            println!("Permutations: {}", i);
+        }
+    }
 
 
+    false
+}
 
+fn is_valid_permutation(
+    permutation: &[SolvedSquare],
+    squares: &[Square],
+    edges: &HashMap<(usize, usize), Edge>,
+    squares_count: u32,
+) -> bool {
+    // Matches squares with permutation
+    for (i, square) in squares.iter().enumerate() {
+        match square {
+            Square::Empty => continue,
+            Square::Sun => {
+                if permutation[i] != SolvedSquare::Sun {
+                    return false;
+                }
+            }
+            Square::Moon => {
+                if permutation[i] != SolvedSquare::Moon {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // Checks edges
+    for (key, edge) in edges {
+        let (i, j) = key;
+        let square1 = &permutation[*i];
+        let square2 = &permutation[*j];
+
+        match edge {
+            Edge::X => {
+                if square1 == square2 {
+                    return false;
+                }
+            }
+            Edge::Equals => {
+                if square1 != square2 {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // Checks rows (equal number of suns and moons)
+    for y in 0..squares_count {
+        let mut suns = 0;
+        let mut moons = 0;
+        for x in 0..squares_count {
+            let index = xy_to_index(x, y, squares_count);
+            match squares[index] {
+                Square::Empty => continue,
+                Square::Sun => suns += 1,
+                Square::Moon => moons += 1,
+            }
+        }
+        if suns != moons {
+            return false;
+        }
+    }
+
+    // Checks columns (equal number of suns and moons)
+    for x in 0..squares_count {
+        let mut suns = 0;
+        let mut moons = 0;
+        for y in 0..squares_count {
+            let index = xy_to_index(x, y, squares_count);
+            match squares[index] {
+                Square::Empty => continue,
+                Square::Sun => suns += 1,
+                Square::Moon => moons += 1,
+            }
+        }
+        if suns != moons {
+            return false;
+        }
+    }
+
+    // Check rows (no more than 2 suns or moons in a row)
+    for y in 0..squares_count {
+        let mut suns = 0;
+        let mut moons = 0;
+        for x in 0..squares_count {
+            let index = xy_to_index(x, y, squares_count);
+            match squares[index] {
+                Square::Empty => continue,
+                Square::Sun => {
+                    suns += 1;
+                    moons = 0;
+                }
+                Square::Moon => {
+                    moons += 1;
+                    suns = 0;
+                }
+            }
+            if suns > 2 || moons > 2 {
+                return false;
+            }
+        }
+    }
+
+    // Check columns (no more than 2 suns or moons in a row)
+    for x in 0..squares_count {
+        let mut suns = 0;
+        let mut moons = 0;
+        for y in 0..squares_count {
+            let index = xy_to_index(x, y, squares_count);
+            match squares[index] {
+                Square::Empty => continue,
+                Square::Sun => {
+                    suns += 1;
+                    moons = 0;
+                }
+                Square::Moon => {
+                    moons += 1;
+                    suns = 0;
+                }
+            }
+            if suns > 2 || moons > 2 {
+                return false;
+            }
+        }
+    }
+
+    true
+}
 
 
 fn window_conf() -> mq::Conf {
@@ -232,6 +382,11 @@ async fn main() {
                     }
                 }
             }
+        }
+
+        if mq::is_key_pressed(mq::KeyCode::Space) {
+            let solved = solve(&squares, &edges, squares_count);
+            println!("Solved: {}", solved);
         }
 
         // Debug - Draw mouse position
