@@ -9,6 +9,22 @@ enum Square {
     Sun,
     Moon,
 }
+impl Square {
+    fn to_color(self) -> mq::Color {
+        match self {
+            Square::Empty => mq::WHITE,
+            Square::Sun => mq::YELLOW,
+            Square::Moon => mq::BLUE,
+        }
+    }
+    fn next(self) -> Square {
+        match self {
+            Square::Empty => Square::Sun,
+            Square::Sun => Square::Moon,
+            Square::Moon => Square::Empty,
+        }
+    }
+}
 
 
 fn xy_to_index(x: u32, y: u32, width: u32) -> usize {
@@ -34,7 +50,7 @@ fn window_conf() -> mq::Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut squares_count: u32 = 6;
-    let mut squares: Vec<Square> = Vec::with_capacity((squares_count * squares_count) as usize);
+    let mut squares = vec![Square::Empty; (squares_count * squares_count) as usize];
 
     loop {
         // Clear background
@@ -62,11 +78,11 @@ async fn main() {
             let mouse_pos = mq::mouse_position();
             if mouse_pos.0 > 116.0 && mouse_pos.0 < 132.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
                 squares_count = (squares_count + 2).min(8);
-                squares = Vec::with_capacity((squares_count * squares_count) as usize);
+                squares = vec![Square::Empty; (squares_count * squares_count) as usize];
             }
             if mouse_pos.0 > 136.0 && mouse_pos.0 < 152.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
                 squares_count = (squares_count - 2).max(4);
-                squares = Vec::with_capacity((squares_count * squares_count) as usize);
+                squares = vec![Square::Empty; (squares_count * squares_count) as usize];
             }
         }
 
@@ -79,13 +95,7 @@ async fn main() {
         for y in 0..squares_count {
             for x in 0..squares_count {
                 let index = xy_to_index(x, y, squares_count);
-                let square = squares.get(index).unwrap_or(&Square::Empty);
-                let color = match square {
-                    Square::Empty => mq::WHITE,
-                    Square::Sun => mq::YELLOW,
-                    Square::Moon => mq::BLUE,
-                };
-
+                let color = squares[index].to_color();
                 mq::draw_rectangle(
                     x_padding + x as f32 * square_size,
                     y_padding + y as f32 * square_size,
@@ -116,6 +126,17 @@ async fn main() {
                     3.0,
                     mq::BLACK,
                 );
+            }
+        }
+
+        // Check if a square is clicked
+        if mq::is_mouse_button_pressed(mq::MouseButton::Left) {
+            let mouse_pos = mq::mouse_position();
+            let x = ((mouse_pos.0 - x_padding) / square_size) as u32;
+            let y = ((mouse_pos.1 - y_padding) / square_size) as u32;
+            if x < squares_count && y < squares_count {
+                let index = xy_to_index(x, y, squares_count);
+                squares[index] = squares[index].next();
             }
         }
 
