@@ -27,7 +27,7 @@ impl Square {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum Edge {
     X,
     Equals,
@@ -102,10 +102,12 @@ async fn main() {
             if mouse_pos.0 > 116.0 && mouse_pos.0 < 132.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
                 squares_count = (squares_count + 2).min(8);
                 squares = vec![Square::Empty; (squares_count * squares_count) as usize];
+                edges.clear();
             }
             if mouse_pos.0 > 136.0 && mouse_pos.0 < 152.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
                 squares_count = (squares_count - 2).max(4);
                 squares = vec![Square::Empty; (squares_count * squares_count) as usize];
+                edges.clear();
             }
         }
 
@@ -156,7 +158,32 @@ async fn main() {
         }
 
         // Draw edges
-        // TODO!
+        for (key, edge) in &edges {
+            let (x1, y1) = index_to_xy(key.0, squares_count);
+            let (x2, y2) = index_to_xy(key.1, squares_count);
+
+            let square1_center = (
+                x_padding + x1 as f32 * square_size + square_size / 2.0,
+                y_padding + y1 as f32 * square_size + square_size / 2.0,
+            );
+            let square2_center = (
+                x_padding + x2 as f32 * square_size + square_size / 2.0,
+                y_padding + y2 as f32 * square_size + square_size / 2.0,
+            );
+            let center = (
+                (square1_center.0 + square2_center.0) / 2.0,
+                (square1_center.1 + square2_center.1) / 2.0,
+            );
+
+            let text_dims = mq::measure_text(edge.to_text(), None, 25, 1.0);
+            mq::draw_text(
+                edge.to_text(),
+                center.0 - text_dims.width / 2.0,
+                center.1 - text_dims.height / 2.0 + text_dims.offset_y,
+                25.0,
+                mq::BLACK,
+            );
+        }
 
         // Check if a square is clicked
         let mouse_pos = mq::mouse_position();
@@ -206,8 +233,6 @@ async fn main() {
                 }
             }
         }
-
-        println!("{:?}", edges);
 
         // Debug - Draw mouse position
         let mouse_pos = mq::mouse_position();
