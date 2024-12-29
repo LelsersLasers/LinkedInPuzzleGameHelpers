@@ -1,4 +1,5 @@
 use macroquad::prelude as mq;
+use std::collections::HashMap;
 
 
 
@@ -26,9 +27,28 @@ impl Square {
     }
 }
 
+#[derive(PartialEq, Eq, Debug)]
+enum Edge {
+    X,
+    Equals,
+}
+impl Edge {
+    fn to_text(self) -> &'static str {
+        match self {
+            Edge::X => "X",
+            Edge::Equals => "=",
+        }
+    }
+}
+
 
 fn xy_to_index(x: u32, y: u32, width: u32) -> usize {
     (y * width + x) as usize
+}
+fn index_to_xy(index: usize, width: u32) -> (u32, u32) {
+    let x = index as u32 % width;
+    let y = index as u32 / width;
+    (x, y)
 }
 
 
@@ -43,6 +63,7 @@ fn window_conf() -> mq::Conf {
         window_width: 600,
         window_height: 500,
         window_resizable: false,
+        sample_count: 0,
         ..Default::default()
     }
 }
@@ -51,6 +72,8 @@ fn window_conf() -> mq::Conf {
 async fn main() {
     let mut squares_count: u32 = 6;
     let mut squares = vec![Square::Empty; (squares_count * squares_count) as usize];
+    let mut clicked_idx: Option<usize> = None;
+    let mut edges: HashMap<(usize, usize), Edge> = HashMap::new();
 
     loop {
         // Clear background
@@ -95,7 +118,10 @@ async fn main() {
         for y in 0..squares_count {
             for x in 0..squares_count {
                 let index = xy_to_index(x, y, squares_count);
-                let color = squares[index].to_color();
+                let color = match clicked_idx {
+                    Some(idx) if idx == index => mq::RED,
+                    _ => squares[index].to_color()
+                };
                 mq::draw_rectangle(
                     x_padding + x as f32 * square_size,
                     y_padding + y as f32 * square_size,
@@ -123,22 +149,65 @@ async fn main() {
                     y_padding + y as f32 * square_size,
                     square_size,
                     square_size,
-                    3.0,
+                    2.0,
                     mq::BLACK,
                 );
             }
         }
 
+        // Draw edges
+        // TODO!
+
         // Check if a square is clicked
-        if mq::is_mouse_button_pressed(mq::MouseButton::Left) {
-            let mouse_pos = mq::mouse_position();
-            let x = ((mouse_pos.0 - x_padding) / square_size) as u32;
-            let y = ((mouse_pos.1 - y_padding) / square_size) as u32;
-            if x < squares_count && y < squares_count {
-                let index = xy_to_index(x, y, squares_count);
-                squares[index] = squares[index].next();
+        let mouse_pos = mq::mouse_position();
+        let grid_x = (mouse_pos.0 - x_padding) / square_size;
+        let grid_y = (mouse_pos.1 - y_padding) / square_size;
+
+        if grid_x > 0.0 && grid_y > 0.0 {
+            let x_index = grid_x as u32;
+            let y_index = grid_y as u32;
+
+            if x_index < squares_count && y_index < squares_count {
+                let index = xy_to_index(x_index, y_index, squares_count);
+                if mq::is_mouse_button_pressed(mq::MouseButton::Left) {
+                    squares[index] = squares[index].next();
+                    clicked_idx = None;
+                } else if mq::is_mouse_button_pressed(mq::MouseButton::Right) {
+                    if let Some(idx) = clicked_idx {
+                        if idx == index {
+                            clicked_idx = None;
+                        } else {
+                            let (x1, y1) = index_to_xy(idx, squares_count);
+                            let (x2, y2) = index_to_xy(index, squares_count);
+
+                            let x_diff = (x1 as i32 - x2 as i32).abs();
+                            let y_diff = (y1 as i32 - y2 as i32).abs();
+                            
+                            if (x_diff + y_diff) == 1 {
+                                let key = (idx, index);
+                                let edge = edges.get(&key);
+
+                                if let Some(edge) = edge {
+                                    if edge == &Edge::X {
+                                        edges.remove(&key);
+                                        edges.insert(key, Edge::Equals);
+                                    } else {
+                                        edges.remove(&key);
+                                    }
+                                } else {
+                                    edges.insert(key, Edge::X);
+                                }
+                            }
+                            clicked_idx = None;
+                        }
+                    } else {
+                        clicked_idx = Some(index);
+                    }
+                }
             }
         }
+
+        println!("{:?}", edges);
 
         // Debug - Draw mouse position
         let mouse_pos = mq::mouse_position();
