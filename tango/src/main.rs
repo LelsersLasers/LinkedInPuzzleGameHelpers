@@ -361,18 +361,30 @@ async fn main() {
                             let y_diff = (y1 as i32 - y2 as i32).abs();
                             
                             if (x_diff + y_diff) == 1 {
-                                let key = (idx, index);
-                                let edge = edges.get(&key);
+                                let key1 = (idx, index);
+                                let edge1 = edges.get(&key1);
 
-                                if let Some(edge) = edge {
+                                let key2 = (index, idx);
+                                let edge2 = edges.get(&key2);
+
+                                if edge1.is_none() && edge2.is_none() {
+                                    edges.insert(key1, Edge::X);
+                                } else if edge1.is_some() && edge2.is_none() {
+                                    let edge = edge1.unwrap();
                                     if edge == &Edge::X {
-                                        edges.remove(&key);
-                                        edges.insert(key, Edge::Equals);
+                                        edges.remove(&key1);
+                                        edges.insert(key1, Edge::Equals);
                                     } else {
-                                        edges.remove(&key);
+                                        edges.remove(&key1);
                                     }
-                                } else {
-                                    edges.insert(key, Edge::X);
+                                } else if edge1.is_none() && edge2.is_some() {
+                                    let edge = edge2.unwrap();
+                                    if edge == &Edge::X {
+                                        edges.remove(&key2);
+                                        edges.insert(key2, Edge::Equals);
+                                    } else {
+                                        edges.remove(&key2);
+                                    }
                                 }
                             }
                             clicked_idx = None;
