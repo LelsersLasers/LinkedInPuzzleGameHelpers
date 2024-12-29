@@ -3,9 +3,6 @@ use std::collections::HashMap;
 
 mod permute;
 
-
-
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Square {
     Empty,
@@ -58,7 +55,6 @@ impl Edge {
     }
 }
 
-
 fn xy_to_index(x: u32, y: u32, width: u32) -> usize {
     (y * width + x) as usize
 }
@@ -68,12 +64,7 @@ fn index_to_xy(index: usize, width: u32) -> (u32, u32) {
     (x, y)
 }
 
-
-fn solve(
-    squares: &[Square],
-    edges: &HashMap<(usize, usize), Edge>,
-    squares_count: u32,
-) -> bool {
+fn solve(squares: &[Square], edges: &HashMap<(usize, usize), Edge>, squares_count: u32) -> bool {
     let total = squares_count * squares_count;
     println!("Generating permutations...");
     let permutations = permute::permutations_with_equal_ones_and_twos(total as usize);
@@ -88,7 +79,6 @@ fn solve(
         i += 1;
         println!("Permutations: {}", i);
     }
-
 
     false
 }
@@ -213,7 +203,6 @@ fn is_valid_permutation(
     true
 }
 
-
 fn window_conf() -> mq::Conf {
     mq::Conf {
         window_title: "Tango Solver".to_owned(),
@@ -256,12 +245,14 @@ async fn main() {
         // Check if increment/decrement buttons are pressed
         if mq::is_mouse_button_pressed(mq::MouseButton::Left) {
             let mouse_pos = mq::mouse_position();
-            if mouse_pos.0 > 116.0 && mouse_pos.0 < 132.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
+            if mouse_pos.0 > 116.0 && mouse_pos.0 < 132.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0
+            {
                 squares_count = (squares_count + 2).min(8);
                 squares = vec![Square::Empty; (squares_count * squares_count) as usize];
                 edges.clear();
             }
-            if mouse_pos.0 > 136.0 && mouse_pos.0 < 152.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0 {
+            if mouse_pos.0 > 136.0 && mouse_pos.0 < 152.0 && mouse_pos.1 > 6.0 && mouse_pos.1 < 22.0
+            {
                 squares_count = (squares_count - 2).max(4);
                 squares = vec![Square::Empty; (squares_count * squares_count) as usize];
                 edges.clear();
@@ -279,7 +270,7 @@ async fn main() {
                 let index = xy_to_index(x, y, squares_count);
                 let color = match clicked_idx {
                     Some(idx) if idx == index => mq::RED,
-                    _ => squares[index].to_color()
+                    _ => squares[index].to_color(),
                 };
                 mq::draw_rectangle(
                     x_padding + x as f32 * square_size,
@@ -366,7 +357,7 @@ async fn main() {
 
                             let x_diff = (x1 as i32 - x2 as i32).abs();
                             let y_diff = (y1 as i32 - y2 as i32).abs();
-                            
+
                             if (x_diff + y_diff) == 1 {
                                 let key1 = (idx, index);
                                 let edge1 = edges.get(&key1);
