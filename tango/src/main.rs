@@ -1,5 +1,4 @@
 use macroquad::prelude as mq;
-use permute::SolvedSquare;
 use std::collections::HashMap;
 
 mod permute;
@@ -7,7 +6,7 @@ mod permute;
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum Square {
     Empty,
     Sun,
@@ -26,6 +25,21 @@ impl Square {
             Square::Empty => Square::Sun,
             Square::Sun => Square::Moon,
             Square::Moon => Square::Empty,
+        }
+    }
+    fn to_u8(self) -> u8 {
+        match self {
+            Square::Empty => 0,
+            Square::Sun => 1,
+            Square::Moon => 2,
+        }
+    }
+    fn from_u8(value: u8) -> Square {
+        match value {
+            0 => Square::Empty,
+            1 => Square::Sun,
+            2 => Square::Moon,
+            _ => panic!("Invalid value"),
         }
     }
 }
@@ -61,7 +75,9 @@ fn solve(
     squares_count: u32,
 ) -> bool {
     let total = squares_count * squares_count;
-    let permutations = permute::BalancedPermutations::new(total as usize);
+    println!("Generating permutations...");
+    let permutations = permute::permutations_with_equal_ones_and_twos(total as usize);
+    println!("Permutations generated");
 
     let mut i = 0;
 
@@ -70,10 +86,7 @@ fn solve(
             return true;
         }
         i += 1;
-
-        if i % 1000 == 0 {
-            println!("Permutations: {}", i);
-        }
+        println!("Permutations: {}", i);
     }
 
 
@@ -81,25 +94,15 @@ fn solve(
 }
 
 fn is_valid_permutation(
-    permutation: &[SolvedSquare],
+    permutation: &[u8],
     squares: &[Square],
     edges: &HashMap<(usize, usize), Edge>,
     squares_count: u32,
 ) -> bool {
     // Matches squares with permutation
     for (i, square) in squares.iter().enumerate() {
-        match square {
-            Square::Empty => continue,
-            Square::Sun => {
-                if permutation[i] != SolvedSquare::Sun {
-                    return false;
-                }
-            }
-            Square::Moon => {
-                if permutation[i] != SolvedSquare::Moon {
-                    return false;
-                }
-            }
+        if square != &Square::Empty && square.to_u8() != permutation[i] {
+            return false;
         }
     }
 
@@ -129,11 +132,12 @@ fn is_valid_permutation(
         let mut moons = 0;
         for x in 0..squares_count {
             let index = xy_to_index(x, y, squares_count);
-            match squares[index] {
-                Square::Empty => continue,
+            let square = Square::from_u8(permutation[index]);
+            match square {
                 Square::Sun => suns += 1,
                 Square::Moon => moons += 1,
-            }
+                Square::Empty => panic!("Empty square in permutation"),
+            };
         }
         if suns != moons {
             return false;
@@ -146,11 +150,12 @@ fn is_valid_permutation(
         let mut moons = 0;
         for y in 0..squares_count {
             let index = xy_to_index(x, y, squares_count);
-            match squares[index] {
-                Square::Empty => continue,
+            let square = Square::from_u8(permutation[index]);
+            match square {
                 Square::Sun => suns += 1,
                 Square::Moon => moons += 1,
-            }
+                Square::Empty => panic!("Empty square in permutation"),
+            };
         }
         if suns != moons {
             return false;
@@ -163,8 +168,8 @@ fn is_valid_permutation(
         let mut moons = 0;
         for x in 0..squares_count {
             let index = xy_to_index(x, y, squares_count);
-            match squares[index] {
-                Square::Empty => continue,
+            let square = Square::from_u8(permutation[index]);
+            match square {
                 Square::Sun => {
                     suns += 1;
                     moons = 0;
@@ -173,6 +178,7 @@ fn is_valid_permutation(
                     moons += 1;
                     suns = 0;
                 }
+                Square::Empty => panic!("Empty square in permutation"),
             }
             if suns > 2 || moons > 2 {
                 return false;
@@ -186,8 +192,8 @@ fn is_valid_permutation(
         let mut moons = 0;
         for y in 0..squares_count {
             let index = xy_to_index(x, y, squares_count);
-            match squares[index] {
-                Square::Empty => continue,
+            let square = Square::from_u8(permutation[index]);
+            match square {
                 Square::Sun => {
                     suns += 1;
                     moons = 0;
@@ -196,6 +202,7 @@ fn is_valid_permutation(
                     moons += 1;
                     suns = 0;
                 }
+                Square::Empty => panic!("Empty square in permutation"),
             }
             if suns > 2 || moons > 2 {
                 return false;
