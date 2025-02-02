@@ -1,8 +1,6 @@
 # LinkedIn Puzzle Game Helpers
 
-## Currently Implemented
-
-### Queens
+## Queens
 
 - A quantum solver that uses D-WAVE's CQM (Constrained Quadratic Model) quantum annealer
 - Flow:
@@ -15,9 +13,9 @@
     - Print the solution
 - Input: `problems.txt` (grid where 2 spots having the same number mean the same region)
 
-### Tango
+## Tango
 
-#### Quantum
+### Quantum
 
 - A quantum solver that uses D-WAVE's CQM (Constrained Quadratic Model) quantum annealer
 - Flow:
@@ -33,7 +31,7 @@
     - Grid where S means sun, M means moon, comma (only) separated
     - Afterwards, links are in the format: x1,y1,x2,y2,[link] where [link] is either `x` or `=`
 
-#### Brute Force
+### Brute Force
 
 - GUI using Macroquad
 - Usage:
